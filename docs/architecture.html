@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soc Ops – Architecture Diagram</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500;700&display=swap');
+
+    :root {
+      --bg:        #0b0f1a;
+      --surface:   #111827;
+      --border:    #1e2d45;
+      --accent:    #38bdf8;
+      --accent2:   #34d399;
+      --accent3:   #f472b6;
+      --accent4:   #fb923c;
+      --accent5:   #a78bfa;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --client:    #0c4a6e;
+      --web:       #1e1b4b;
+      --service:   #14532d;
+      --logic:     #431407;
+      --data:      #4c1d95;
+      --templates: #1c1917;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      animation: fadeDown 0.6s ease both;
+    }
+    header .badge {
+      display: inline-block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 99px;
+      padding: 0.25rem 0.9rem;
+      margin-bottom: 1rem;
+    }
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Diagram wrapper ── */
+    .diagram {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── Layer rows ── */
+    .layer {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .layer-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 0.25rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .layer-cards {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Arrow connector ── */
+    .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+    }
+    .connector svg {
+      display: block;
+    }
+    .connector-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+    }
+    .connector-label {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Cards ── */
+    .card {
+      flex: 1;
+      min-width: 180px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1rem 1.1rem;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.5s ease both;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    }
+
+    /* color themes per layer */
+    .card.client   { background: var(--client);   border-color: #0369a1; }
+    .card.web      { background: var(--web);       border-color: #4338ca; }
+    .card.service  { background: var(--service);   border-color: #166534; }
+    .card.logic    { background: var(--logic);     border-color: #9a3412; }
+    .card.data     { background: var(--data);      border-color: #6d28d9; }
+    .card.template { background: var(--templates); border-color: #44403c; }
+
+    .card-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    .card-file {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
+    }
+    .card-details {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .card-details li {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      padding-left: 0.8rem;
+      position: relative;
+    }
+    .card-details li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+    }
+
+    /* accent chips on card titles */
+    .chip {
+      display: inline-block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.58rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 99px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+    .chip-blue   { background: rgba(56,189,248,0.15); color: var(--accent);  border: 1px solid rgba(56,189,248,0.3); }
+    .chip-green  { background: rgba(52,211,153,0.15); color: var(--accent2); border: 1px solid rgba(52,211,153,0.3); }
+    .chip-pink   { background: rgba(244,114,182,0.15);color: var(--accent3); border: 1px solid rgba(244,114,182,0.3);}
+    .chip-orange { background: rgba(251,146,60,0.15); color: var(--accent4); border: 1px solid rgba(251,146,60,0.3); }
+    .chip-purple { background: rgba(167,139,250,0.15);color: var(--accent5); border: 1px solid rgba(167,139,250,0.3);}
+
+    /* ── Routes table card ── */
+    .routes-card {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #4338ca;
+      background: var(--web);
+      padding: 1rem 1.25rem;
+      animation: fadeUp 0.5s ease both;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .routes-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+    }
+    .routes-card .card-title { margin-bottom: 0.75rem; }
+    .routes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+    }
+    .routes-table th {
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .routes-table td {
+      padding: 0.35rem 0.5rem;
+      color: #cbd5e1;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .method {
+      font-weight: 600;
+      font-size: 0.62rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .get  { background: rgba(52,211,153,0.18); color: var(--accent2); }
+    .post { background: rgba(56,189,248,0.18); color: var(--accent); }
+
+    /* ── State machine panel ── */
+    .state-machine {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #9a3412;
+      background: var(--logic);
+      padding: 1rem 1.25rem;
+      animation: fadeUp 0.5s ease both;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .state-machine:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+    }
+    .state-machine .card-title { margin-bottom: 0.75rem; }
+    .states-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .state-node {
+      border-radius: 8px;
+      padding: 0.4rem 0.75rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .state-start  { background: rgba(167,139,250,0.15); color: var(--accent5); border-color: rgba(167,139,250,0.4); }
+    .state-play   { background: rgba(52,211,153,0.15);  color: var(--accent2); border-color: rgba(52,211,153,0.4); }
+    .state-bingo  { background: rgba(244,114,182,0.15); color: var(--accent3); border-color: rgba(244,114,182,0.4); }
+    .state-arrow  { color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; }
+
+    /* ── Legend ── */
+    .legend {
+      max-width: 1000px;
+      margin: 2.5rem auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .layer:nth-child(1) .card { animation-delay: 0.05s; }
+    .layer:nth-child(3) .card { animation-delay: 0.15s; }
+    .layer:nth-child(5) .card { animation-delay: 0.25s; }
+    .layer:nth-child(7) .card { animation-delay: 0.35s; }
+    .layer:nth-child(9) .card { animation-delay: 0.45s; }
+    .layer:nth-child(11) .card { animation-delay: 0.55s; }
+
+    /* ── SVG arrows ── */
+    .arrow-down {
+      width: 24px;
+      height: 32px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">Architecture Diagram</div>
+    <h1>Soc Ops — Social Bingo</h1>
+    <p>A FastAPI + HTMX web application for in-person mixers</p>
+  </header>
+
+  <div class="diagram">
+
+    <!-- ── Layer 1: Client ── -->
+    <div class="layer">
+      <div class="layer-label">① Client</div>
+      <div class="layer-cards">
+        <div class="card client">
+          <span class="card-icon">🌐</span>
+          <div class="card-title">Browser <span class="chip chip-blue">HTMX</span></div>
+          <div class="card-file">js/htmx.min.js</div>
+          <ul class="card-details">
+            <li>Sends HTTP GET / POST requests</li>
+            <li>Swaps HTML fragments in-place</li>
+            <li>Session tracked via cookie</li>
+            <li>No full page reloads</li>
+          </ul>
+        </div>
+        <div class="card client">
+          <span class="card-icon">🎨</span>
+          <div class="card-title">Styles <span class="chip chip-blue">CSS</span></div>
+          <div class="card-file">css/app.css</div>
+          <ul class="card-details">
+            <li>Custom utility classes</li>
+            <li>Tailwind-inspired design system</li>
+            <li>Responsive 5×5 grid</li>
+            <li>Animation & transitions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="connector">
+      <div class="connector-line"></div>
+      <svg class="arrow-down" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="24" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <polyline points="6,18 12,26 18,18" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <span class="connector-label">HTTP requests / HTML responses</span>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- ── Layer 2: Web / FastAPI ── -->
+    <div class="layer">
+      <div class="layer-label">② Web Layer — <code style="font-size:0.65rem;color:#a5b4fc">app/main.py</code></div>
+      <div class="routes-card">
+        <div class="card-title">
+          FastAPI Application
+          <span class="chip chip-purple">ASGI</span>
+          <span class="chip chip-blue">Uvicorn</span>
+          <span class="chip chip-pink">SessionMiddleware</span>
+        </div>
+        <table class="routes-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Route</th>
+              <th>Handler</th>
+              <th>Template Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td>/</td>
+              <td>home()</td>
+              <td>home.html</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td>/start</td>
+              <td>start_game()</td>
+              <td>components/game_screen.html</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td>/toggle/{square_id}</td>
+              <td>toggle_square()</td>
+              <td>components/game_screen.html</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td>/reset</td>
+              <td>reset_game()</td>
+              <td>components/start_screen.html</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td>/dismiss-modal</td>
+              <td>dismiss_modal()</td>
+              <td>components/game_screen.html</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="connector">
+      <div class="connector-line"></div>
+      <svg class="arrow-down" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="24" stroke="#34d399" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <polyline points="6,18 12,26 18,18" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <span class="connector-label">session lookup / mutation</span>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- ── Layer 3: Service ── -->
+    <div class="layer">
+      <div class="layer-label">③ Service Layer — <code style="font-size:0.65rem;color:#a5b4fc">app/game_service.py</code></div>
+      <div class="layer-cards">
+        <div class="card service">
+          <span class="card-icon">📦</span>
+          <div class="card-title">GameSession <span class="chip chip-green">@dataclass</span></div>
+          <ul class="card-details">
+            <li>game_state: GameState</li>
+            <li>board: list[BingoSquareData]</li>
+            <li>winning_line: BingoLine | None</li>
+            <li>show_bingo_modal: bool</li>
+            <li>start_game() / reset_game()</li>
+            <li>handle_square_click(id)</li>
+            <li>dismiss_modal()</li>
+          </ul>
+        </div>
+        <div class="card service">
+          <span class="card-icon">🗄️</span>
+          <div class="card-title">Session Store <span class="chip chip-green">in-memory</span></div>
+          <ul class="card-details">
+            <li>dict[session_id → GameSession]</li>
+            <li>Keyed by UUID from cookie</li>
+            <li>get_session(session_id)</li>
+            <li>Auto-creates missing sessions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="connector">
+      <div class="connector-line"></div>
+      <svg class="arrow-down" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="24" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <polyline points="6,18 12,26 18,18" fill="none" stroke="#fb923c" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <span class="connector-label">pure functions (no side effects)</span>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- ── Layer 4: Logic ── -->
+    <div class="layer">
+      <div class="layer-label">④ Business Logic — <code style="font-size:0.65rem;color:#a5b4fc">app/game_logic.py</code></div>
+      <div class="layer-cards">
+        <div class="card logic">
+          <span class="card-icon">🎲</span>
+          <div class="card-title">Board Generation</div>
+          <ul class="card-details">
+            <li>generate_board() → 5×5 grid</li>
+            <li>Random sample of 24 questions</li>
+            <li>Center (index 12) = FREE SPACE</li>
+          </ul>
+        </div>
+        <div class="card logic">
+          <span class="card-icon">🔀</span>
+          <div class="card-title">Square Toggle</div>
+          <ul class="card-details">
+            <li>toggle_square(board, id)</li>
+            <li>Returns new immutable list</li>
+            <li>Free space cannot be toggled</li>
+          </ul>
+        </div>
+        <div class="card logic">
+          <span class="card-icon">🏆</span>
+          <div class="card-title">Bingo Detection</div>
+          <ul class="card-details">
+            <li>check_bingo(board)</li>
+            <li>5 rows + 5 cols + 2 diagonals</li>
+            <li>Winning lines cached via @cache</li>
+            <li>Returns first complete BingoLine</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- State machine inline -->
+      <div class="state-machine" style="margin-top:0.75rem">
+        <div class="card-title">Game State Machine <span class="chip chip-orange">GameState (StrEnum)</span></div>
+        <div class="states-row">
+          <div class="state-node state-start">START</div>
+          <span class="state-arrow">─ start_game() ──▶</span>
+          <div class="state-node state-play">PLAYING</div>
+          <span class="state-arrow">─ bingo detected ──▶</span>
+          <div class="state-node state-bingo">BINGO</div>
+          <span class="state-arrow">─ dismiss_modal() ──▶</span>
+          <div class="state-node state-play">PLAYING</div>
+          <span class="state-arrow">─ reset_game() ──▶</span>
+          <div class="state-node state-start">START</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="connector">
+      <div class="connector-line"></div>
+      <svg class="arrow-down" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="24" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <polyline points="6,18 12,26 18,18" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <span class="connector-label">Pydantic models &amp; static content</span>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- ── Layer 5: Data / Models ── -->
+    <div class="layer">
+      <div class="layer-label">⑤ Data Layer — <code style="font-size:0.65rem;color:#a5b4fc">app/models.py &amp; app/data.py</code></div>
+      <div class="layer-cards">
+        <div class="card data">
+          <span class="card-icon">🧩</span>
+          <div class="card-title">BingoSquareData <span class="chip chip-purple">Pydantic</span></div>
+          <ul class="card-details">
+            <li>id: int</li>
+            <li>text: str</li>
+            <li>is_marked: bool</li>
+            <li>is_free_space: bool</li>
+            <li>Immutable (frozen=True)</li>
+          </ul>
+        </div>
+        <div class="card data">
+          <span class="card-icon">📏</span>
+          <div class="card-title">BingoLine <span class="chip chip-purple">Pydantic</span></div>
+          <ul class="card-details">
+            <li>type: "row" | "column" | "diagonal"</li>
+            <li>index: int</li>
+            <li>squares: list[int]</li>
+            <li>Immutable (frozen=True)</li>
+          </ul>
+        </div>
+        <div class="card data">
+          <span class="card-icon">📋</span>
+          <div class="card-title">Question Bank <span class="chip chip-purple">data.py</span></div>
+          <ul class="card-details">
+            <li>24 icebreaker prompts</li>
+            <li>FREE_SPACE constant</li>
+            <li>Randomly sampled per game</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="connector">
+      <div class="connector-line"></div>
+      <svg class="arrow-down" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="24" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <polyline points="6,18 12,26 18,18" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <span class="connector-label">Jinja2 renders session → HTML fragments</span>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- ── Layer 6: Templates ── -->
+    <div class="layer">
+      <div class="layer-label">⑥ Presentation — <code style="font-size:0.65rem;color:#a5b4fc">app/templates/</code></div>
+      <div class="layer-cards">
+        <div class="card template">
+          <span class="card-icon">🏠</span>
+          <div class="card-title">base.html + home.html</div>
+          <ul class="card-details">
+            <li>Full-page shell &amp; layout</li>
+            <li>HTMX + CSS imports</li>
+            <li>Conditional start / game screens</li>
+          </ul>
+        </div>
+        <div class="card template">
+          <span class="card-icon">🟩</span>
+          <div class="card-title">components/</div>
+          <ul class="card-details">
+            <li>start_screen.html – "Start Game" UI</li>
+            <li>game_screen.html – board wrapper</li>
+            <li>bingo_board.html – 5×5 grid</li>
+            <li>bingo_modal.html – win overlay</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end .diagram -->
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#0369a1"></div>Client / Browser</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4338ca"></div>Web / FastAPI</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#166534"></div>Service Layer</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#9a3412"></div>Business Logic</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#6d28d9"></div>Data / Models</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#44403c"></div>Templates</div>
+  </div>
+
+</body>
+</html>
